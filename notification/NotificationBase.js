@@ -1,11 +1,14 @@
-const {BrowserWindow, ipcMain, screen} = require('electron')
-const axios = require('axios');
-const path = require('path');
-const {isNil} = require("lodash");
+import {BrowserWindow, ipcMain, screen} from 'electron'
+import axios from 'axios'
+import path from 'path'
+import {fileURLToPath} from 'url';
+import {isValidUrl} from './imageUtil.js';
+
 
 const NotificationBase = (options) => {
 
-    console.log("options", options)
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
 
     let {
         title,
@@ -31,7 +34,6 @@ const NotificationBase = (options) => {
     let notification = null;
 
     ipcMain.on('close-notify', (e, i) => {
-        console.log("close command ", i);
         onCloseCommand(i);
     });
 
@@ -45,7 +47,6 @@ const NotificationBase = (options) => {
 
 
     const show = () => {
-        console.log("not ops", options);
         notification = render();
         notification.once('ready-to-show', () => {
             if (!needDownloadIcon) {
@@ -56,13 +57,16 @@ const NotificationBase = (options) => {
                 close();
             }, duration * 1.1)
         });
-        if (needDownloadIcon) {
+        if (needDownloadIcon && isValidUrl(icon)) {
             downloadIconAsBase64(icon).then((base64) => {
                 icon = base64;
             }).finally(() => {
                 sendMeta()
                 notification.show()
             });
+        } else {
+            sendMeta()
+            notification.show()
         }
     };
 
@@ -80,7 +84,6 @@ const NotificationBase = (options) => {
             lifeTime: duration,
             index: index,
         }
-        console.log("meta", meta);
         notification.webContents.send('set-meta', meta);
     }
 
@@ -106,7 +109,7 @@ const NotificationBase = (options) => {
         notifyWindow.on('closed', () => {
             onClose(index)
         });
-        if (!isNil(onRender)) {
+        if ((onRender != null && onRender != undefined)) {
             onRender(notifyWindow);
         }
         return notifyWindow;
@@ -122,5 +125,5 @@ const NotificationBase = (options) => {
     return {show, notification};
 }
 
-module.exports = NotificationBase;
+export default NotificationBase;
 

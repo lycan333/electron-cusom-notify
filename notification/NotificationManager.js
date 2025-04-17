@@ -1,7 +1,6 @@
-const defaultNotify = require('./NotificationBase')
-const positionManager = require('./NotificationPositionManager')
-const {isNil} = require('lodash')
-const {screen} = require('electron')
+import defaultNotify from './NotificationBase.js'
+import positionManager from './NotificationPositionManager.js'
+import {screen} from 'electron'
 
 const NotificationManager = (options) => {
 
@@ -102,7 +101,7 @@ const NotificationManager = (options) => {
 
         ops.onCloseCommand = (index) => {
             const win = getWindowByUUID(index);
-            if (!isNil(win))
+            if ((win != null && win != undefined))
                 if (!win.isDestroyed()) {
                     win.close()
                 }
@@ -110,7 +109,6 @@ const NotificationManager = (options) => {
 
         ops.onClose = (index) => {
             const closedIndex = getNotifyIndexByUUID(index);
-            console.log("closedIndex", closedIndex);
             if (closedIndex !== -1) {
                 notifications.splice(closedIndex, 1);
                 repositionNotifications(closedIndex);
@@ -118,7 +116,7 @@ const NotificationManager = (options) => {
         }
 
         ops.onRender = (win) => {
-            if (!isNil(win)) {
+            if ((win != null && win != undefined)){
                 const notificationObject = {
                     uuid: index,
                     window: win
@@ -137,14 +135,15 @@ const NotificationManager = (options) => {
         const found = notifications.find(w => w.uuid === uuid);
         if (found) {
             const win = found.window;
-            if (!isNil(win)) return win;
+            if ((win != null && win != undefined))
+                return win;
         }
         return null;
     }
 
     const getNotifyIndexByUUID = (uuid) => {
         const found = notifications.find(w => w.uuid === uuid);
-        if (!isNil(found)) {
+        if ((found != null && found != undefined)){
             return notifications.indexOf(found);
         }
         return null;
@@ -152,4 +151,4 @@ const NotificationManager = (options) => {
 
     return {createNotification};
 }
-module.exports = NotificationManager
+export default NotificationManager

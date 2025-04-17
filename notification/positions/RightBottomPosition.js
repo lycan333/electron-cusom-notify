@@ -1,4 +1,5 @@
-const {screen} = require('electron')
+import {screen} from 'electron'
+
 const RightBottomPosition = (options) => {
     const {groupWidth, groupHeight} = options;
     const display = screen.getPrimaryDisplay();
@@ -8,4 +9,4 @@ const RightBottomPosition = (options) => {
         y: height - groupHeight,
     }
 }
-module.exports = RightBottomPosition;
+export default RightBottomPosition;

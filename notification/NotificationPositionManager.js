@@ -1,4 +1,4 @@
-const RightBottomPosition = require("./positions/RightBottomPosition.js");
+import RightBottomPosition from './positions/RightBottomPosition.js'
 
 const PositionManager = (options) => {
     const {position, groupWidth, groupHeight} = options;
@@ -17,4 +17,4 @@ const PositionManager = (options) => {
     return {getPosition}
 }
 
-module.exports = PositionManager
+export default PositionManager
