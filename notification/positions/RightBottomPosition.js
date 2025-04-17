@@ -8,4 +8,4 @@ const RightBottomPosition = (options) => {
         y: height - groupHeight,
     }
 }
-export default RightBottomPosition;
+module.exports = RightBottomPosition;

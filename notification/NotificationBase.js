@@ -1,10 +1,12 @@
-import path from "path";
-
-const uuid = require('uuid')
 const {BrowserWindow, ipcMain, screen} = require('electron')
 const axios = require('axios');
+const path = require('path');
+const {isNil} = require("lodash");
 
 const NotificationBase = (options) => {
+
+    console.log("options", options)
+
     let {
         title,
         message,
@@ -14,9 +16,8 @@ const NotificationBase = (options) => {
         duration = 5000,
         onClose,
         onCloseCommand,
-        config: {
-            needDownloadIcon = false,
-        },
+        onRender,
+        needDownloadIcon = false,
         size: {
             width,
             height
@@ -25,11 +26,14 @@ const NotificationBase = (options) => {
             x,
             y
         }
-    } = options;
+    } = options || {};
 
     let notification = null;
 
-    ipcMain.on('close-notify', onCloseCommand);
+    ipcMain.on('close-notify', (e, i) => {
+        console.log("close command ", i);
+        onCloseCommand(i);
+    });
 
 
     const downloadIconAsBase64 = async (url) => {
@@ -41,9 +45,11 @@ const NotificationBase = (options) => {
 
 
     const show = () => {
+        console.log("not ops", options);
         notification = render();
         notification.once('ready-to-show', () => {
             if (!needDownloadIcon) {
+                sendMeta()
                 notification.show()
             }
             setTimeout(() => {
@@ -54,23 +60,29 @@ const NotificationBase = (options) => {
             downloadIconAsBase64(icon).then((base64) => {
                 icon = base64;
             }).finally(() => {
-                notification.webContents.send('set-meta', {
-                    content: {
-                        title: title,
-                        description: message,
-                        icon: icon,
-                        type: type,
-                    },
-                    style: {
-                        maxLength: width,
-                    },
-                    lifeTime: duration,
-                    index: index,
-                });
+                sendMeta()
                 notification.show()
             });
         }
     };
+
+    const sendMeta = () => {
+        const meta = {
+            content: {
+                title: title,
+                description: message,
+                icon: icon,
+                type: type,
+            },
+            style: {
+                maxLength: width,
+            },
+            lifeTime: duration,
+            index: index,
+        }
+        console.log("meta", meta);
+        notification.webContents.send('set-meta', meta);
+    }
 
     const render = () => {
         const notifyWindow = new BrowserWindow({
@@ -90,10 +102,13 @@ const NotificationBase = (options) => {
                 preload: path.join(__dirname, 'preload.js'),
             }
         });
-        notifyWindow.loadFile(path.join(__dirname, '/../templates/default.html'));
+        notifyWindow.loadFile(path.join(__dirname, '/templates/default.html'));
         notifyWindow.on('closed', () => {
-            onClose()
+            onClose(index)
         });
+        if (!isNil(onRender)) {
+            onRender(notifyWindow);
+        }
         return notifyWindow;
     }
 
@@ -103,8 +118,9 @@ const NotificationBase = (options) => {
         }
     }
 
-    return notification;
+
+    return {show, notification};
 }
 
-export default NotificationBase;
+module.exports = NotificationBase;
 

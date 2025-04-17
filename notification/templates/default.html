@@ -102,7 +102,6 @@
     function updateCountdown() {
         const progress = 100 - (currentStep / steps) * 100;
         bar.style.width = progress + "%";
-        document.getElementById("title").innerText = `${steps} ${currentStep} ${(currentStep / steps)}%  ${intervalTime}`;
         if (currentStep < steps) {
             currentStep++;
             setTimeout(updateCountdown, intervalTime);

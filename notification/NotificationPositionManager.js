@@ -1,18 +1,20 @@
-import RightBottomPosition from "./positions/RightBottomPosition";
+const RightBottomPosition = require("./positions/RightBottomPosition.js");
 
 const PositionManager = (options) => {
     const {position, groupWidth, groupHeight} = options;
     const getPosition = () => {
-        switch (this.position) {
+        switch (position) {
             case "bottomRight": {
                 return RightBottomPosition({
-                    groupWidth: this.groupWidth,
-                    groupHeight: this.groupHeight
+                    groupWidth: groupWidth,
+                    groupHeight: groupHeight
                 });
             }
             default:
                 break;
         }
-
     }
+    return {getPosition}
 }
+
+module.exports = PositionManager

@@ -1,13 +1,21 @@
-import NotificationBase from './NotificationBase'
-import {isNil} from "lodash";
-import {screen} from "electron";
+const defaultNotify = require('./NotificationBase')
+const positionManager = require('./NotificationPositionManager')
+const {isNil} = require('lodash')
+const {screen} = require('electron')
 
-const NotificationManager = () => {
-    let notifications = [];
-    const defaultHeight = 100;
-    const defaultWidth = 350;
-    const defaultGap = 1;
-    let defaultLifeTime = 10000;
+const NotificationManager = (options) => {
+
+    const notifications = [];
+
+
+    const {
+        defaultHeight = 100,
+        defaultWidth = 350,
+        gap = 1,
+        duration = 10000,
+        position = "bottomRight"
+    } = options || {}
+
 
     const animateMoveTo = (win, targetY, duration = 120) => {
         const intervalTime = 10; // ~60fps
@@ -51,51 +59,77 @@ const NotificationManager = () => {
     const repositionNotifications = (startIndex) => {
         for (let i = startIndex; i < notifications.length; i++) {
             const win = notifications[i].window;
-            console.log(notifications[i]);
             if (!win.isDestroyed()) {
                 const {width, height} = screen.getPrimaryDisplay().workAreaSize;
-                const newY = height - ((defaultWidth + defaultHeight) * (i + 1));
+                const newY = height - ((defaultHeight + gap) * (i + 1));
                 animateMoveTo(win, newY);
             }
         }
     }
 
-    const createNotification = (options) => {
-        const {index} = options
+    const getGroupWidth = (width) => {
+        return width + gap
+    }
+    const getGroupHeight = (height) => {
+        const index = notifications.length;
+        return (height + gap) * (index + 1)
+    }
 
-        options.onCloseCommand = () => {
-            options.onCloseCommand();
+
+    const createNotification = (ops) => {
+        const {index} = ops
+
+        ops = {
+            size: {
+                width: defaultWidth,
+                height: defaultHeight,
+            },
+            ...ops
+        }
+
+        const posMan = positionManager({
+            position: position,
+            groupWidth: getGroupWidth(ops.size.width),
+            groupHeight: getGroupHeight(ops.size.height)
+        });
+        const pos = posMan.getPosition();
+
+        ops.location = {
+            x: pos.x,
+            y: pos.y
+        }
+
+
+        ops.onCloseCommand = (index) => {
             const win = getWindowByUUID(index);
-            console.log("close notification with index", index);
             if (!isNil(win))
                 if (!win.isDestroyed()) {
                     win.close()
                 }
         }
 
-        options.onClose = () => {
-            options.onClose();
-            console.log("closed");
-            const win = getWindowByUUID(index);
-            if (!isNil(win)) {
-                const closedIndex = notifications.indexOf({
-                    uuid: index,
-                    window: win
-                });
-                console.log("closedIndex", closedIndex);
-                if (closedIndex !== -1) {
-                    notifications.splice(closedIndex, 1);
-                    repositionNotifications(closedIndex);
-                }
+        ops.onClose = (index) => {
+            const closedIndex = getNotifyIndexByUUID(index);
+            console.log("closedIndex", closedIndex);
+            if (closedIndex !== -1) {
+                notifications.splice(closedIndex, 1);
+                repositionNotifications(closedIndex);
             }
         }
 
-        const notification = NotificationBase(options);
-        const notificationObject = {
-            uuid: index,
-            window: notification
-        };
-        notifications.push(notificationObject);
+        ops.onRender = (win) => {
+            if (!isNil(win)) {
+                const notificationObject = {
+                    uuid: index,
+                    window: win
+                };
+                notifications.push(notificationObject);
+            }
+        }
+
+        const notification = defaultNotify(ops);
+        notification.show();
+
 
     }
 
@@ -108,6 +142,14 @@ const NotificationManager = () => {
         return null;
     }
 
-    return { createNotification };
+    const getNotifyIndexByUUID = (uuid) => {
+        const found = notifications.find(w => w.uuid === uuid);
+        if (!isNil(found)) {
+            return notifications.indexOf(found);
+        }
+        return null;
+    }
+
+    return {createNotification};
 }
 module.exports = NotificationManager

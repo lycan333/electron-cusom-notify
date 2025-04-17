@@ -1,2 +1,3 @@
-const NotificationManager = require('notification/NotificationManager.js')
-export default {NotificationManager}
+const NotificationManager = require('./notification/NotificationManager')
+const PositionManager = require('./notification/NotificationPositionManager')
+module.exports = {NotificationManager, PositionManager}
